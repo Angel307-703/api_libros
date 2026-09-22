@@ -1,8 +1,84 @@
-import { useMemo,useState } from "react";
-/* Debe buscar libros, filtrar desde un año mínimo y ordenar del más reciente al más antiguo. Objetivo: depurar filtros, sort y arrays. */
-function App(){const[texto,setTexto]=useState("");const[libros,setLibros]=useState([]);const[anioMinimo,setAnioMinimo]=useState("");const[cargando,setCargando]=useState(false);const[error,setError]=useState("");
- const buscar=async()=>{if(!texto.trim()){setError("Escribe un libro o autor");return}try{setCargando(true);setError("");const r=await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(texto)}&limit=30`);if(!r.ok)throw new Error("No fue posible buscar libros");const d=await r.json();setLibros(d.docs??[])}catch(e){setError(e.message)}finally{setCargando(false)}};
- const procesados=useMemo(()=>{let r=[...libros];if(anioMinimo)r=r.filter(l=>(l.first_publish_year??0)<=Number(anioMinimo));r.sort((a,b)=>(a.first_publish_year??0)-(b.first_publish_year??0));return r},[libros,anioMinimo]);
- const autor=l=>{const a=l.author_name??[];return a[1]??a[0]??"Autor desconocido"};
- return <main><h1>Biblioteca digital</h1><input value={texto} placeholder="Ejemplo: Harry Potter" onChange={e=>setTexto(e.target.value)}/><button onClick={buscar} disabled={cargando}>{cargando?"Buscando...":"Buscar"}</button><div style={{marginTop:20}}><label>Mostrar libros publicados desde el año: </label><input type="number" value={anioMinimo} onChange={e=>setAnioMinimo(e.target.value)}/></div><p>Los resultados deberían mostrarse del más reciente al más antiguo.</p>{error&&<p>{error}</p>}{procesados.map((l,i)=><article key={l.key??i}><h2>{l.title}</h2><p>Autor: {autor(l)}</p><p>Primera publicación: {l.first_publish_year??"Sin información"}</p></article>)}</main>;
-} export default App;
+import React, { useState } from 'react';
+import './styles.css';
+
+export default function App() {
+  const [query, setQuery] = useState('');
+  const [minYear, setMinYear] = useState('');
+  const [books, setBooks] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const buscarLibros = async (e) => {
+    e.preventDefault();
+    if (!query.trim()) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(query)}`);
+      const data = await res.json();
+
+      if (!data.docs || data.docs.length === 0) {
+        throw new Error('No se encontraron libros.');
+      }
+
+      setBooks(data.docs);
+    } catch (err) {
+      setError(err.message);
+      setBooks([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const obtenerAutor = (book) => {
+    if (book.author_name && book.author_name.length > 0) {
+      return book.author_name[0];
+    }
+    return 'Autor no disponible';
+  };
+
+  return (
+    <div className="container" style={{ paddingTop: '40px' }}>
+      <div className="card" style={{ padding: '24px', background: '#fff', borderRadius: '8px', border: '1px solid #e0e0e0', maxWidth: '600px', margin: '0 auto' }}>
+        <h1 style={{ fontSize: '22px', fontWeight: 'bold', marginBottom: '8px' }}>Biblioteca Digital</h1>
+        
+        <form onSubmit={buscarLibros} style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
+          <input 
+            type="text" 
+            value={query} 
+            onChange={(e) => setQuery(e.target.value)} 
+            placeholder="Buscar libro o autor (ej. Harry Potter)..."
+            style={{ padding: '8px 12px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '14px' }}
+          />
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <input 
+              type="number" 
+              value={minYear} 
+              onChange={(e) => setMinYear(e.target.value)} 
+              placeholder="Año mínimo (ej. 2000)"
+              style={{ flex: 1, padding: '8px 12px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '14px' }}
+            />
+            <button type="submit" style={{ padding: '8px 16px', background: '#f1f1f1', border: '1px solid #ccc', borderRadius: '4px', fontSize: '14px', cursor: 'pointer' }}>
+              Buscar
+            </button>
+          </div>
+        </form>
+
+        {loading && <p>Cargando libros...</p>}
+        {error && <p style={{ color: '#d9534f', fontSize: '14px' }}>{error}</p>}
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {books.slice(0, 10).map((book, index) => (
+            <div key={index} style={{ padding: '12px', background: '#f9f9f9', borderRadius: '6px', border: '1px solid #eee' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: '0 0 4px 0' }}>{book.title}</h3>
+              <p style={{ fontSize: '13px', color: '#555', margin: '0 0 4px 0' }}>Autor: {obtenerAutor(book)}</p>
+              <small style={{ color: '#666' }}>Año de publicación: {book.first_publish_year || 'Desconocido'}</small>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
