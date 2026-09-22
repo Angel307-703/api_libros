@@ -31,6 +31,12 @@ export default function App() {
         );
       }
 
+      librosProcesados.sort((a, b) => {
+        const yearA = a.first_publish_year || 0;
+        const yearB = b.first_publish_year || 0;
+        return yearB - yearA;
+      });
+
       setBooks(librosProcesados);
     } catch (err) {
       setError(err.message);
@@ -78,6 +84,9 @@ export default function App() {
         {error && <p style={{ color: '#d9534f', fontSize: '14px' }}>{error}</p>}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {books.length === 0 && !loading && !error && (
+            <p style={{ color: '#888', fontSize: '14px' }}>No hay resultados para mostrar.</p>
+          )}
           {books.slice(0, 10).map((book, index) => (
             <div key={index} style={{ padding: '12px', background: '#f9f9f9', borderRadius: '6px', border: '1px solid #eee' }}>
               <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: '0 0 4px 0' }}>{book.title}</h3>
@@ -89,4 +98,4 @@ export default function App() {
       </div>
     </div>
   );
-}
+}correcio
