@@ -23,7 +23,15 @@ export default function App() {
         throw new Error('No se encontraron libros.');
       }
 
-      setBooks(data.docs);
+      let librosProcesados = data.docs;
+
+      if (minYear) {
+        librosProcesados = librosProcesados.filter(book => 
+          book.first_publish_year && book.first_publish_year >= Number(minYear)
+        );
+      }
+
+      setBooks(librosProcesados);
     } catch (err) {
       setError(err.message);
       setBooks([]);
